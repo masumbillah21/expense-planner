@@ -29,7 +29,7 @@ class Chart extends StatelessWidget {
           'amount': total
         };
       },
-    );
+    ).reversed.toList();
   }
 
   double get maxSpending {

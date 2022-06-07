@@ -15,9 +15,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Expense Keeper',
       theme: ThemeData(
-          primarySwatch: Colors.red,
-          fontFamily: 'Quicksand',
-          textTheme: const TextTheme(
+        primarySwatch: Colors.indigo,
+        errorColor: Colors.red,
+        fontFamily: 'Quicksand',
+        textTheme: const TextTheme(
             headline6: TextStyle(
               fontSize: 20.0,
               fontFamily: 'OpenSans',
@@ -25,14 +26,17 @@ class MyApp extends StatelessWidget {
             headline2: TextStyle(
               fontSize: 16.0,
               fontFamily: 'OpenSans',
-              color: Colors.red,
+              color: Colors.indigo,
             ),
             bodyText2: TextStyle(
               fontSize: 14.0,
               fontFamily: 'Quicksand',
               color: Colors.black54,
             ),
-          )),
+            button: TextStyle(
+              color: Colors.white,
+            )),
+      ),
       home: const MyHomePage(),
     );
   }
@@ -56,15 +60,25 @@ class _MyHomePageState extends State<MyHomePage> {
     }).toList();
   }
 
-  void _addNewTransaction({required String txTitle, required double txAmount}) {
+  void _addNewTransaction({
+    required String txTitle,
+    required double txAmount,
+    required DateTime txDate,
+  }) {
     final newTx = Transaction(
       id: DateTime.now().toString(),
       title: txTitle,
       amount: txAmount,
-      date: DateTime.now(),
+      date: txDate,
     );
     setState(() {
       _userTransactions.add(newTx);
+    });
+  }
+
+  void _deleteTransaction(String id) {
+    setState(() {
+      _userTransactions.removeWhere((element) => element.id == id);
     });
   }
 
@@ -110,7 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ? const Text('')
                   : Chart(_recentTransactions),
             ),
-            TransactionList(_userTransactions),
+            TransactionList(_userTransactions, _deleteTransaction),
           ],
         ),
       ),
