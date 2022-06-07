@@ -11,9 +11,8 @@ class TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 470,
-      child: transactions.isEmpty
+    return LayoutBuilder(builder: (context, constraints) {
+      return transactions.isEmpty
           ? Column(
               children: [
                 Text(
@@ -24,7 +23,7 @@ class TransactionList extends StatelessWidget {
                   height: 10,
                 ),
                 SizedBox(
-                  height: 200,
+                  height: constraints.maxHeight * 0.6,
                   child: Image.asset(
                     'assets/images/waiting.png',
                     fit: BoxFit.cover,
@@ -54,16 +53,27 @@ class TransactionList extends StatelessWidget {
                     subtitle: Text(
                       DateFormat.yMMMd().format(transactions[i].date),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => deleteTx(transactions[i].id),
-                      color: Theme.of(context).errorColor,
-                    ),
+                    trailing: MediaQuery.of(context).size.width > 460
+                        ? TextButton.icon(
+                            label: const Text('Delete'),
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => deleteTx(transactions[i].id),
+                            style: ButtonStyle(
+                              foregroundColor: MaterialStateProperty.all(
+                                Theme.of(context).errorColor,
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => deleteTx(transactions[i].id),
+                            color: Theme.of(context).errorColor,
+                          ),
                   ),
                 );
               },
               itemCount: transactions.length,
-            ),
-    );
+            );
+    });
   }
 }

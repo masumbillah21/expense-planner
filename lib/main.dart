@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:expanse_planner/models/transaction.dart';
 import 'package:expanse_planner/widgets/chart.dart';
 import 'package:expanse_planner/widgets/new_transaction.dart';
 import 'package:expanse_planner/widgets/transaction_list.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -52,6 +55,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final List<Transaction> _userTransactions = [];
 
+  bool _showChart = false;
+
   List<Transaction> get _recentTransactions {
     return _userTransactions.where((tx) {
       return tx.date.isAfter(DateTime.now().subtract(
@@ -84,6 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _showTransactionModal(BuildContext ctx) {
     showModalBottomSheet(
+      isScrollControlled: true,
       context: ctx,
       builder: (_) {
         return GestureDetector(
@@ -99,40 +105,121 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Expense Keeper',
-          style: TextStyle(fontFamily: 'OpenSans'),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.add,
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final dynamic appBar = Platform.isIOS
+        ? CupertinoNavigationBar(
+            middle: const Text('Expense Keeper'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  child: const Icon(
+                    CupertinoIcons.add,
+                  ),
+                  onTap: () => _showTransactionModal(context),
+                ),
+              ],
             ),
-            tooltip: 'Add New',
-            onPressed: () => _showTransactionModal(context),
           )
-        ],
-      ),
-      body: SingleChildScrollView(
+        : AppBar(
+            title: const Text(
+              'Expense Keeper',
+              style: TextStyle(fontFamily: 'OpenSans'),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.add,
+                ),
+                tooltip: 'Add New',
+                onPressed: () => _showTransactionModal(context),
+              ),
+            ],
+          );
+    final expanseList = SizedBox(
+      height: (mediaQuery.size.height -
+              appBar.preferredSize.height -
+              mediaQuery.padding.top) *
+          0.7,
+      child: TransactionList(_userTransactions, _deleteTransaction),
+    );
+
+    final pageBody = SafeArea(
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              child: _recentTransactions.isEmpty
-                  ? const Text('')
-                  : Chart(_recentTransactions),
-            ),
-            TransactionList(_userTransactions, _deleteTransaction),
+            if (isLandscape)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Show Chart',
+                    style: Theme.of(context).textTheme.headline2,
+                  ),
+                  Switch.adaptive(
+                    activeColor: Theme.of(context).colorScheme.secondary,
+                    value: _showChart,
+                    onChanged: (val) {
+                      setState(
+                        () {
+                          _showChart = val;
+                        },
+                      );
+                    },
+                  )
+                ],
+              ),
+            if (!isLandscape)
+              SizedBox(
+                child: SizedBox(
+                  height: (mediaQuery.size.height -
+                          appBar.preferredSize.height -
+                          mediaQuery.padding.top) *
+                      0.3,
+                  child: Chart(_recentTransactions),
+                ),
+              ),
+            if (!isLandscape) expanseList,
+            if (!isLandscape && _showChart)
+              SizedBox(
+                height: (mediaQuery.size.height -
+                        appBar.preferredSize.height -
+                        mediaQuery.padding.top) *
+                    0.7,
+                child: Chart(_recentTransactions),
+              ),
+            if (isLandscape)
+              _showChart
+                  ? SizedBox(
+                      height: (mediaQuery.size.height -
+                              appBar.preferredSize.height -
+                              mediaQuery.padding.top) *
+                          0.7,
+                      child: Chart(_recentTransactions),
+                    )
+                  : expanseList
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showTransactionModal(context),
-        tooltip: 'Add New',
-        child: const Icon(Icons.add),
-      ),
     );
+
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            navigationBar: appBar,
+            child: pageBody,
+          )
+        : Scaffold(
+            appBar: appBar,
+            body: pageBody,
+            floatingActionButton: Platform.isIOS
+                ? const SizedBox()
+                : FloatingActionButton(
+                    onPressed: () => _showTransactionModal(context),
+                    tooltip: 'Add New',
+                    child: const Icon(Icons.add),
+                  ),
+          );
   }
 }
